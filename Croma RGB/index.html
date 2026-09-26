@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000000" id="themeColorMeta">
+<meta name="description" content="Croma - Colores para daltónicos con favoritos y colores personalizados offline">
+<title>Croma RGB</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-512.png">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+<style>
+  :root{
+    --bg:#FCFCFD;--bg-soft:#F8FAFC;--bg-muted:#F1F5F9;--card:#FFFFFF;--text:#0F172A;--muted:#64748B;--muted-2:#94A3B8;--border:#E2E8F0;--border-strong:#CBD5E1;
+    --radius:18px;--radius-lg:28px;--shadow:0 4px 24px rgba(15,23,42,0.06);--shadow-lg:0 20px 60px rgba(15,23,42,0.12);
+    --red:#FF3B30;--green:#34C759;--blue:#007AFF;--fav:#F59E0B;
+  }
+  html[data-theme="dark"]{
+    --bg:#000000;--bg-soft:#121212;--bg-muted:#1E1E1E;--card:#121212;--text:#FAFAFA;--muted:#A1A1AA;--muted-2:#71717A;--border:#262626;--border-strong:#404040;
+    --shadow:0 4px 24px rgba(0,0,0,0.7);--shadow-lg:0 20px 60px rgba(0,0,0,0.9);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter",system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;transition:background .25s,color .25s}
+  body{padding-bottom:40px}
+  .app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;transition:background .25s}
+  header{
+    position:sticky;top:0;z-index:10;
+    background:color-mix(in srgb, var(--bg) 80%, transparent);
+    backdrop-filter:blur(16px) saturate(180%);-webkit-backdrop-filter:blur(16px) saturate(180%);
+    border-bottom:1px solid var(--border);padding:14px 16px 12px;
+  }
+  .brand{display:grid;grid-template-columns:40px 1fr 42px;align-items:center;gap:12px;margin-bottom:14px}
+  .brand-mark{width:40px;height:40px;border-radius:12px;background:#FFFFFF;display:flex;align-items:center;justify-content:center;overflow:hidden;flex:0 0 40px;border:1.5px solid var(--border);box-shadow:var(--shadow)}
+  .brand-mark img{width:100%;height:100%;object-fit:cover;display:block}
+  html[data-theme="dark"] .brand-mark{background:#FFFFFF;border-color:#262626}
+  .brand-title{font-size:22px;font-weight:900;letter-spacing:-0.8px;text-align:center;line-height:1}
+  .settings-btn{width:42px;height:42px;border-radius:999px;border:1.5px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text);transition:.2s;box-shadow:var(--shadow);font-size:20px}
+  .settings-btn:active{transform:scale(0.94) rotate(15deg)}
+  .search-wrap{position:relative}
+  .search-wrap i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted-2);font-size:18px}
+  .search{width:100%;height:48px;padding:0 16px 0 42px;border-radius:999px;border:1.5px solid var(--border);background:var(--card);font-size:15px;font-weight:500;outline:none;transition:.2s;color:var(--text)}
+  .search::placeholder{color:var(--muted-2)}
+  .search:focus{border-color:var(--text);box-shadow:0 0 0 4px color-mix(in srgb, var(--text) 8%, transparent)}
+  .offline-bar{display:none;margin-top:10px;background:var(--text);color:var(--bg);border-radius:999px;padding:8px 14px;font-size:12px;font-weight:700;align-items:center;gap:8px}
+  .offline-bar.show{display:flex}
+  .offline-dot{width:8px;height:8px;border-radius:999px;background:#22C55E;animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(34,197,94,0.4)}70%{box-shadow:0 0 0 6px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
+  .filters{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:12px 16px 2px;-webkit-overflow-scrolling:touch}
+  .filters::-webkit-scrollbar{display:none}
+  .chip{
+    flex:0 0 auto;height:36px;padding:0 14px;border-radius:999px;border:1.5px solid var(--border);background:var(--card);
+    font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:.2s;white-space:nowrap;
+    display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1;
+  }
+  .chip i{font-size:14px;line-height:1;display:flex;align-items:center}
+  .chip.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+  .chip .chip-count{background:color-mix(in srgb, var(--muted) 15%, transparent);padding:2px 7px;border-radius:999px;font-size:11px;font-weight:800;line-height:1}
+  .chip.active .chip-count{background:color-mix(in srgb, var(--bg) 20%, transparent)}
+  .count{padding:10px 16px 8px;font-size:12.5px;font-weight:600;color:var(--muted-2);text-transform:uppercase}
+  .list{display:flex;flex-direction:column;gap:10px;padding:0 16px 12px}
+  .color-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:.18s;box-shadow:var(--shadow)}
+  .color-item.custom{border-style:dashed}
+  .color-item:active{transform:scale(0.985)}
+  .color-item.animate-in{animation:slideUp .4s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .swatch{width:54px;height:54px;border-radius:14px;flex:0 0 54px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06)}
+  .meta{flex:1;min-width:0}
+  .meta-name{font-size:15.5px;font-weight:700;letter-spacing:-0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:6px}
+  .meta-hex{font-size:12px;font-weight:600;color:var(--muted);margin-top:3px;font-family:ui-monospace,monospace}
+  .fav-btn{
+    width:40px;height:40px;border-radius:999px;border:1.5px solid var(--border);background:var(--bg-soft);
+    display:grid;place-items:center;cursor:pointer;color:var(--muted-2);flex:0 0 40px;transition:.2s;font-size:18px;line-height:1;
+  }
+  .fav-btn i{display:flex;line-height:1;align-items:center;justify-content:center}
+  .fav-btn.active{background:var(--text);border-color:var(--text);color:var(--fav)}
+  .chevron{
+    width:40px;height:40px;border-radius:999px;background:var(--bg-soft);border:1.5px solid var(--border);
+    display:grid;place-items:center;color:var(--muted-2);flex:0 0 40px;font-size:16px;line-height:1;transition:.2s;
+  }
+  .chevron i{display:flex;line-height:1;align-items:center;justify-content:center}
+  .empty{padding:40px 20px;text-align:center;background:var(--card);border:1.5px dashed var(--border);border-radius:var(--radius-lg);margin:0 16px;color:var(--muted)}
+  .empty b{color:var(--text)}
+  .show-more-wrap{padding:0 16px 8px}
+  .show-more-btn{
+    width:100%;height:52px;border-radius:999px;border:1.5px solid var(--border);background:var(--card);color:var(--text);
+    font-size:14px;font-weight:800;letter-spacing:-0.2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;
+    box-shadow:var(--shadow);transition:.2s;
+  }
+  .show-more-btn:active{transform:scale(0.98)}
+  .show-more-btn i{transition:transform .3s;font-size:18px}
+  .show-more-btn.expanded i{transform:rotate(180deg)}
+  /* LAB */
+  .lab{margin:20px 16px 24px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow)}
+  .lab-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  .lab-title{font-size:16px;font-weight:800;letter-spacing:-0.4px;display:flex;align-items:center;gap:8px}
+  .lab-preview{width:100%;height:110px;border-radius:16px;margin-bottom:12px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.06);transition:.2s}
+  .lab-color-name{background:var(--bg-soft);border:1px solid var(--border);border-radius:14px;padding:12px 14px;margin-bottom:18px;text-align:center}
+  .lab-color-name .label{font-size:11px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted-2);margin-bottom:3px}
+  .lab-color-name .name{font-size:18px;font-weight:900;letter-spacing:-0.5px;line-height:1.1}
+  .lab-color-name .distance{font-size:11.5px;color:var(--muted);margin-top:2px;font-weight:600}
+  .sliders{display:flex;flex-direction:column;gap:14px}
+  .slider-row{display:flex;align-items:center;gap:12px}
+  .slider-label{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:white;flex:0 0 22px}
+  .slider-label.r{background:var(--red)} .slider-label.g{background:var(--green)} .slider-label.b{background:var(--blue)}
+  input[type=range]{flex:1;-webkit-appearance:none;height:6px;border-radius:999px;background:var(--bg-muted);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:999px;background:var(--card);border:2px solid var(--text);box-shadow:0 2px 8px rgba(0,0,0,0.15);cursor:pointer}
+  .slider-val{width:38px;text-align:right;font-family:ui-monospace,monospace;font-size:13px;font-weight:700}
+  .lab-rgb{margin-top:16px;display:flex;gap:8px}
+  .lab-code{flex:1;background:var(--bg-soft);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-family:ui-monospace,monospace;font-size:12px;font-weight:700;text-align:center}
+  .custom-add{margin-top:16px;display:flex;flex-direction:column;gap:10px;padding-top:16px;border-top:1px solid var(--border)}
+  .custom-add-title{font-size:12px;font-weight:800;letter-spacing:0.6px;text-transform:uppercase;color:var(--muted-2);display:flex;align-items:center;gap:6px}
+  .custom-input-row{display:flex;gap:8px}
+  .custom-input{flex:1;height:46px;padding:0 16px;border-radius:999px;border:1.5px solid var(--border);background:var(--bg-soft);font-size:14px;font-weight:600;color:var(--text);outline:none;transition:.2s}
+  .custom-input:focus{border-color:var(--text);background:var(--card)}
+  .save-custom-btn{height:46px;padding:0 20px;border-radius:999px;border:none;background:var(--text);color:var(--bg);font-size:13.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;justify-content:center;white-space:nowrap}
+  .save-custom-btn:active{transform:scale(0.97)}
+  /* SHEETS */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(8px);z-index:40;opacity:0;pointer-events:none;transition:.3s}
+  html[data-theme="dark"] .overlay{background:rgba(0,0,0,0.7)}
+  .overlay.open{opacity:1;pointer-events:auto}
+  .sheet{position:fixed;left:50%;bottom:0;transform:translate(-50%, 105%);width:100%;max-width:480px;max-height:92vh;background:var(--card);border-radius:28px 28px 0 0;z-index:50;box-shadow:var(--shadow-lg);transition:transform .42s cubic-bezier(.32,1.2,.34,1);display:flex;flex-direction:column;overflow:hidden;border-top:1px solid var(--border)}
+  .sheet.open{transform:translate(-50%,0)}
+  .sheet-handle{width:100%;display:flex;justify-content:center;padding:12px 0 6px}
+  .handle{width:36px;height:5px;border-radius:999px;background:var(--border-strong)}
+  .sheet-scroll{overflow-y:auto;overscroll-behavior:contain;padding:0 22px 28px}
+  .sheet-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .close-btn{
+    width:40px;height:40px;border-radius:999px;background:var(--bg-soft);border:1.5px solid var(--border);
+    display:grid;place-items:center;cursor:pointer;color:var(--text);transition:.2s;font-size:18px;line-height:1;
+  }
+  .close-btn i{display:flex;line-height:1;align-items:center;justify-content:center}
+  .close-btn.fav-active{background:var(--text);color:var(--fav);border-color:var(--text)}
+  .detail-swatch-wrap{display:flex;justify-content:center;margin:8px 0 18px}
+  .detail-swatch{width:148px;height:148px;border-radius:32px;box-shadow:0 16px 32px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(0,0,0,0.06);transition:filter .3s}
+  .detail-name{font-size:28px;font-weight:900;letter-spacing:-0.8px;text-align:center}
+  .detail-hex{font-family:ui-monospace,monospace;text-align:center;color:var(--muted);font-weight:700;margin-top:6px;font-size:14px}
+  .copy-row{display:flex;gap:10px;margin:18px 0}
+  .copy-btn{flex:1;height:44px;border-radius:999px;border:1.5px solid var(--border);background:var(--card);font-size:13.5px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;color:var(--text)}
+  .copy-btn.primary{background:var(--text);color:var(--bg);border-color:var(--text)}
+  .copy-btn.danger{color:#EF4444;border-color:#EF4444;background:transparent;width:100%}
+  .section-title{font-size:12px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted-2);margin:22px 0 12px}
+  .rgb-card{background:var(--bg-soft);border:1px solid var(--border);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:14px}
+  .rgb-row{display:flex;flex-direction:column;gap:7px}
+  .rgb-row-head{display:flex;justify-content:space-between;align-items:center}
+  .rgb-label{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800}
+  .dot{width:10px;height:10px;border-radius:999px}
+  .rgb-val{font-family:ui-monospace,monospace;font-size:13px;font-weight:800;background:var(--card);border:1px solid var(--border);padding:3px 8px;border-radius:999px;min-width:42px;text-align:center}
+  .bar{height:10px;background:var(--card);border:1px solid var(--border);border-radius:999px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:999px;transition:width .4s}
+  .explain{background:var(--card);border:1px dashed var(--border);border-radius:16px;padding:14px;font-size:13.5px;line-height:1.5;font-weight:500}
+  .sim-controls{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+  .sim-controls::-webkit-scrollbar{display:none}
+  .sim-btn{flex:0 0 auto;height:38px;padding:0 14px;border-radius:999px;border:1.5px solid var(--border);background:var(--card);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;color:var(--muted)}
+  .sim-btn.active{background:var(--text);color:var(--bg);border-color:var(--text)}
+  /* SETTINGS PANEL */
+  .settings-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);backdrop-filter:blur(8px);z-index:60;opacity:0;pointer-events:none;transition:.3s}
+  .settings-overlay.open{opacity:1;pointer-events:auto}
+  .settings-panel{
+    position:fixed;top:0;right:0;bottom:0;width:100%;max-width:480px;background:var(--bg);z-index:70;
+    transform:translateX(105%);transition:transform .38s cubic-bezier(.32,1.2,.34,1);
+    display:flex;flex-direction:column;box-shadow:-20px 0 60px rgba(0,0,0,0.15);border-left:1px solid var(--border);
+  }
+  .settings-panel.open{transform:translateX(0)}
+  .settings-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);background:color-mix(in srgb, var(--bg) 85%, transparent);backdrop-filter:blur(12px)}
+  .settings-title{font-size:18px;font-weight:900;letter-spacing:-0.5px;display:flex;align-items:center;gap:8px}
+  .settings-scroll{flex:1;overflow-y:auto;padding:20px 16px 40px;display:flex;flex-direction:column;gap:28px}
+  .settings-section{display:flex;flex-direction:column;gap:12px}
+  .settings-section-head{display:flex;align-items:center;justify-content:space-between}
+  .settings-section-title{font-size:12px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted-2);display:flex;align-items:center;gap:6px}
+  .clear-btn{height:32px;padding:0 12px;border-radius:999px;border:1.5px solid var(--border);background:var(--card);font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:4px}
+  .clear-btn:active{transform:scale(0.96)}
+  .theme-options{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .theme-option{
+    height:92px;border-radius:18px;border:2px solid var(--border);background:var(--card);cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:.2s;position:relative;
+    color:var(--text);
+  }
+  .theme-option.active{border-color:var(--text);background:var(--bg-soft);box-shadow:0 0 0 3px color-mix(in srgb, var(--text) 15%, transparent)}
+  .theme-option .icon{
+    width:44px;height:44px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+    background:var(--bg-muted);border:1.5px solid var(--border);font-size:22px;color:var(--text);transition:.2s;
+  }
+  .theme-option .label{font-size:12px;font-weight:800;letter-spacing:-0.2px;color:var(--text)}
+  .theme-option.active .icon{background:var(--text);color:var(--bg);border-color:var(--text);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+  .settings-color-list{display:flex;flex-direction:column;gap:8px}
+  .settings-color-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:14px}
+  .settings-color-item .swatch{width:36px;height:36px;border-radius:10px;flex:0 0 36px}
+  .settings-color-item .meta{flex:1;min-width:0}
+  .settings-color-item .meta-name{font-size:13.5px}
+  .settings-color-item .meta-hex{font-size:11px}
+  .settings-color-item .remove-btn{width:32px;height:32px;border-radius:999px;border:1px solid var(--border);background:var(--bg-soft);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted-2);font-size:14px}
+  .settings-info{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;font-size:13px;font-weight:600;line-height:1.4}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%, 120px);background:var(--text);color:var(--bg);padding:12px 18px;border-radius:999px;font-size:13px;font-weight:700;z-index:100;transition:.4s cubic-bezier(.32,1.4,.34,1);display:flex;align-items:center;gap:8px;pointer-events:none}
+  .toast.show{transform:translate(-50%,0)}
+  .install-banner{display:none;margin:0 16px 16px;background:var(--text);color:var(--bg);border-radius:18px;padding:14px 16px;align-items:center;gap:12px}
+  .install-banner.show{display:flex}
+  .install-banner button{margin-left:auto;background:var(--bg);color:var(--text);border:none;border-radius:999px;height:36px;padding:0 16px;font-weight:800;font-size:13px;cursor:pointer}
+  /* SPLASH ANIMACION ENTRADA */
+  #splash{
+    position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    transition:opacity .7s cubic-bezier(.4,0,.2,1), transform .7s cubic-bezier(.4,0,.2,1), visibility .7s;
+  }
+  #splash.hide{opacity:0;transform:scale(1.08);visibility:hidden;pointer-events:none}
+  .splash-logo-wrap{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center}
+  .splash-logo{
+    width:96px;height:96px;border-radius:26px;box-shadow:0 20px 60px rgba(0,0,0,0.25), 0 0 0 1px var(--border);
+    animation:logoIn 0.9s cubic-bezier(.34,1.56,.64,1) both;
+    position:relative;z-index:2;
+  }
+  .splash-glow{
+    position:absolute;inset:0;border-radius:30px;
+    background:conic-gradient(from 0deg, #FFB000, #FF2D7B, #7A00E6, #007AFF, #00C950, #FFB000);
+    filter:blur(24px);opacity:0.35;animation:glowPulse 2s ease-in-out infinite, glowRotate 4s linear infinite;
+    z-index:1;
+  }
+  @keyframes logoIn{
+    0%{transform:scale(0.3) rotate(-20deg);opacity:0}
+    60%{transform:scale(1.15) rotate(3deg);opacity:1}
+    80%{transform:scale(0.95) rotate(-1deg)}
+    100%{transform:scale(1) rotate(0);opacity:1}
+  }
+  @keyframes glowPulse{0%,100%{transform:scale(0.9);opacity:0.25}50%{transform:scale(1.15);opacity:0.45}}
+  @keyframes glowRotate{to{transform:rotate(360deg)}}
+  .splash-title{
+    margin-top:20px;font-size:28px;font-weight:900;letter-spacing:-1px;line-height:1;
+    animation:fadeUp 0.7s cubic-bezier(.2,.8,.2,1) 0.3s both;
+  }
+  .splash-title span{color:var(--muted)}
+  .splash-subtitle{
+    margin-top:8px;font-size:13px;font-weight:600;letter-spacing:0.4px;color:var(--muted);text-transform:uppercase;
+    animation:fadeUp 0.7s cubic-bezier(.2,.8,.2,1) 0.5s both;
+  }
+  .splash-loader{
+    margin-top:28px;width:120px;height:3px;background:var(--bg-muted);border-radius:999px;overflow:hidden;position:relative;
+    animation:fadeUp 0.6s 0.7s both;
+  }
+  .splash-loader-bar{
+    position:absolute;left:0;top:0;bottom:0;width:40%;background:var(--text);border-radius:999px;
+    animation:loaderMove 1.1s ease-in-out infinite;
+  }
+  .splash-credit{
+    margin-top:24px;font-size:11px;font-weight:600;letter-spacing:0.6px;color:var(--muted);opacity:0.8;
+    animation:fadeUp 0.7s cubic-bezier(.2,.8,.2,1) 0.9s both;
+  }
+  @keyframes loaderMove{0%{transform:translateX(-100%)}100%{transform:translateX(300%)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .app{opacity:0;transform:translateY(8px);transition:opacity .6s .2s, transform .6s .2s}
+  .app.ready{opacity:1;transform:translateY(0)}
+  .list .color-item{opacity:0;transform:translateY(12px)}
+  .app.ready .color-item{animation:slideUp .5s cubic-bezier(.2,.8,.2,1) both}
+  .app.ready .color-item:nth-child(1){animation-delay:0.05s}
+  .app.ready .color-item:nth-child(2){animation-delay:0.08s}
+  .app.ready .color-item:nth-child(3){animation-delay:0.11s}
+  .app.ready .color-item:nth-child(4){animation-delay:0.14s}
+  .app.ready .color-item:nth-child(5){animation-delay:0.17s}
+  .app.ready .color-item:nth-child(6){animation-delay:0.20s}
+  .app.ready .color-item:nth-child(7){animation-delay:0.23s}
+  .app.ready .color-item:nth-child(8){animation-delay:0.26s}
+  .app.ready .color-item:nth-child(9){animation-delay:0.29s}
+  .app.ready .color-item:nth-child(10){animation-delay:0.32s}
+  .app.ready .color-item:nth-child(n+11){animation-delay:0.35s}
+
+  /* CAMERA CARD - MINIMALISTA NO IA */
+  .camera-card{
+    margin:0 16px 12px;background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);
+    padding:12px;display:flex;align-items:center;gap:12px;cursor:pointer;box-shadow:var(--shadow);transition:.18s;
+  }
+  .camera-card:active{transform:scale(0.985)}
+  .camera-card-icon{
+    width:54px;height:54px;border-radius:14px;background:var(--text);color:var(--bg);
+    display:grid;place-items:center;font-size:22px;flex:0 0 54px;line-height:1;
+  }
+  html[data-theme="dark"] .camera-card-icon{background:#FFFFFF;color:#000000;border:none}
+  .camera-card-icon i{display:flex;line-height:1}
+  .camera-card-text{flex:1;min-width:0;line-height:1.25}
+  .camera-card-text b{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;letter-spacing:-0.3px;color:var(--text);line-height:1.2}
+  .camera-card-text span{display:block;font-size:12px;color:var(--muted);margin-top:3px;font-weight:500;line-height:1.2}
+  .camera-card-chevron{
+    width:40px;height:40px;border-radius:999px;background:var(--bg-soft);border:1.5px solid var(--border);
+    display:grid;place-items:center;color:var(--muted-2);flex:0 0 40px;font-size:16px;line-height:1;transition:.2s;
+  }
+  .camera-card-chevron i{display:flex;line-height:1}
+
+  /* CAMERA OVERLAY */
+  .camera-overlay{
+    position:fixed;inset:0;z-index:80;background:#000;display:flex;flex-direction:column;
+    transform:translateY(100%);transition:transform .45s cubic-bezier(.32,1.2,.34,1);overflow:hidden;
+  }
+  .camera-overlay.open{transform:translateY(0)}
+  .camera-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(0,0,0,0.6);backdrop-filter:blur(12px);position:absolute;top:0;left:0;right:0;z-index:2}
+  .camera-title{color:white;font-size:16px;font-weight:800;letter-spacing:-0.3px}
+  .camera-viewport{flex:1;position:relative;overflow:hidden;background:#000;display:flex;align-items:center;justify-content:center}
+  #cameraVideo{width:100%;height:100%;object-fit:cover}
+  .camera-reticle{
+    position:absolute;left:50%;top:50%;transform:translate(-50%, -50%);
+    width:140px;height:140px;border:2px solid rgba(255,255,255,0.9);border-radius:24px;
+    box-shadow:0 0 0 4000px rgba(0,0,0,0.35), 0 0 20px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;
+  }
+  .camera-reticle::before{content:'';position:absolute;inset:-2px;border-radius:24px;border:2px solid white;opacity:0.5;animation:reticlePulse 1.8s ease-in-out infinite}
+  @keyframes reticlePulse{0%,100%{transform:scale(1);opacity:0.5}50%{transform:scale(1.08);opacity:0.2}}
+  .reticle-inner{width:8px;height:8px;background:white;border-radius:999px;box-shadow:0 0 10px rgba(255,255,255,0.8)}
+  .camera-info{
+    background:var(--card);border-top:1px solid var(--border);padding:16px 20px 24px;
+    display:flex;align-items:center;gap:14px;min-height:92px;
+  }
+  .camera-color-preview{width:56px;height:56px;border-radius:16px;flex:0 0 56px;box-shadow:inset 0 0 0 1px rgba(0,0,0,0.1);background:#888;transition:.15s}
+  .camera-color-meta{flex:1;min-width:0}
+  .camera-color-name{font-size:18px;font-weight:900;letter-spacing:-0.5px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .camera-color-hex{font-size:12px;font-family:ui-monospace,monospace;color:var(--muted);margin-top:3px;font-weight:600}
+  .camera-capture-btn{
+    height:48px;padding:0 18px;border-radius:999px;border:none;background:var(--text);color:var(--bg);
+    font-size:13px;font-weight:800;display:flex;align-items:center;gap:6px;cursor:pointer;flex:0 0 auto;transition:.2s;
+  }
+  .camera-capture-btn:active{transform:scale(0.96)}
+
+  @media(min-width:520px){
+    body{background:color-mix(in srgb, var(--bg) 90%, var(--bg-soft))}
+    .app{background:var(--card);box-shadow:0 0 0 1px var(--border), 0 20px 80px rgba(0,0,0,0.08);border-radius:32px;margin:24px auto;overflow:hidden;min-height:calc(100vh - 48px)}
+    .sheet{border-radius:28px;bottom:24px;max-height:88vh}
+    .settings-panel{border-radius:32px 0 0 32px;top:24px;bottom:24px;right:calc(50% - 240px);max-height:calc(100vh - 48px);box-shadow:0 20px 80px rgba(0,0,0,0.2)}
+    header{border-radius:32px 32px 0 0}
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <filter id="protanopia"><feColorMatrix type="matrix" values="0.567,0.433,0,0,0 0.558,0.442,0,0,0 0,0.242,0.758,0,0 0,0,0,1,0"/></filter>
+  <filter id="deuteranopia"><feColorMatrix type="matrix" values="0.625,0.375,0,0,0 0.7,0.3,0,0,0 0,0.3,0.7,0,0 0,0,0,1,0"/></filter>
+  <filter id="tritanopia"><feColorMatrix type="matrix" values="0.95,0.05,0,0,0 0,0.433,0.567,0,0 0,0.475,0.525,0,0 0,0,0,1,0"/></filter>
+</defs></svg>
+
+<div id="splash">
+  <div class="splash-logo-wrap">
+    <div class="splash-glow"></div>
+    <img src="./icon-192.png" alt="Croma RGB" class="splash-logo">
+  </div>
+  <div class="splash-title">Croma <span>RGB</span></div>
+  <div class="splash-loader"><div class="splash-loader-bar"></div></div>
+  <div class="splash-credit">Desarrollado por Mauricio Ricotti</div>
+</div>
+
+<div class="app" id="app">
+  <header>
+    <div class="brand">
+      <div class="brand-mark"><img src="./icon-192.png" alt="Croma RGB"></div>
+      <div class="brand-title">Croma RGB</div>
+      <button id="settingsBtn" class="settings-btn" aria-label="Configuración"><i class="bi bi-gear-fill"></i></button>
+    </div>
+    <div class="search-wrap">
+      <i class="bi bi-search"></i>
+      <input id="search" class="search" type="search" placeholder="Busca: rojo, azul, ámbar..." autocomplete="off" spellcheck="false">
+    </div>
+    <div id="offlineBar" class="offline-bar"><div class="offline-dot"></div> Offline</div>
+  </header>
+
+  <div class="filters" id="filters"></div>
+  <div class="count" id="count"></div>
+  <div class="install-banner" id="installBanner">
+    <div style="width:36px;height:36px;border-radius:10px;background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;font-weight:900">C</div>
+    <div style="line-height:1.2"><div style="font-weight:800;font-size:14px">Instalar Croma</div><div style="font-size:12px;opacity:.8">App offline</div></div>
+    <button id="installBtn">Instalar</button>
+  </div>
+
+  <div class="camera-card" id="cameraCard">
+    <div class="camera-card-icon"><i class="bi bi-camera-fill"></i></div>
+    <div class="camera-card-text"><b><i class="bi bi-stars"></i> Escanear color real</b><span>Usa la cámara para identificar cualquier color</span></div>
+    <div class="camera-card-chevron"><i class="bi bi-chevron-right"></i></div>
+  </div>
+
+  <div class="list" id="list"></div>
+  <div class="show-more-wrap" id="showMoreWrap"></div>
+
+  <div class="lab">
+    <div class="lab-head"><div class="lab-title"><i class="bi bi-palette-fill"></i> Laboratorio RGB</div></div>
+    <div id="labPreview" class="lab-preview"></div>
+    <div id="labColorName" class="lab-color-name">
+      <div class="label">Color actual</div>
+      <div class="name" id="labNameText">Ámbar</div>
+      <div class="distance" id="labDistanceText">RGB 255, 176, 0</div>
+    </div>
+    <div class="sliders">
+      <div class="slider-row"><div class="slider-label r">R</div><input id="rRange" type="range" min="0" max="255" value="255"><div id="rVal" class="slider-val">255</div></div>
+      <div class="slider-row"><div class="slider-label g">G</div><input id="gRange" type="range" min="0" max="255" value="176"><div id="gVal" class="slider-val">176</div></div>
+      <div class="slider-row"><div class="slider-label b">B</div><input id="bRange" type="range" min="0" max="255" value="0"><div id="bVal" class="slider-val">0</div></div>
+    </div>
+    <div class="lab-rgb">
+      <div id="labHex" class="lab-code">#FFB000</div>
+      <div id="labRgb" class="lab-code">RGB 255, 176, 0</div>
+    </div>
+    <div class="custom-add">
+      <div class="custom-add-title"><i class="bi bi-plus-circle"></i> Guardar personalizado</div>
+      <div class="custom-input-row">
+        <input id="customNameInput" class="custom-input" type="text" placeholder="Nombre, ej: Mi Ámbar" maxlength="30">
+        <button id="saveCustomBtn" class="save-custom-btn"><i class="bi bi-plus-lg"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:32px 16px 24px;text-align:center">
+    <div style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;background:var(--card);border:1.5px solid var(--border);border-radius:999px;box-shadow:var(--shadow);font-size:12px;font-weight:700;letter-spacing:-0.2px;color:var(--text)"><i class="bi bi-code-slash"></i> Desarrollado por Mauricio Ricotti</div>
+  </div>
+</div>
+
+<!-- Detail Sheet -->
+<div class="overlay" id="overlay"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true">
+  <div class="sheet-handle"><div class="handle"></div></div>
+  <div class="sheet-scroll">
+    <div class="sheet-top">
+      <div style="font-size:12px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;color:var(--muted-2)"><i class="bi bi-eyedropper"></i> Detalle</div>
+      <div style="display:flex;gap:8px">
+        <button class="close-btn" id="detailFavBtn" aria-label="Fav"><i class="bi bi-star"></i></button>
+        <button class="close-btn" id="closeBtn" aria-label="Cerrar"><i class="bi bi-x-lg"></i></button>
+      </div>
+    </div>
+    <div class="detail-swatch-wrap"><div id="detailSwatch" class="detail-swatch"></div></div>
+    <div id="detailName" class="detail-name">Ámbar</div>
+    <div id="detailHex" class="detail-hex">#FFB000 • RGB 255, 176, 0</div>
+    <div class="copy-row">
+      <button class="copy-btn primary" id="copyRgbBtn"><i class="bi bi-clipboard"></i> Copiar RGB</button>
+      <button class="copy-btn" id="copyHexBtn"><i class="bi bi-hash"></i> Copiar HEX</button>
+    </div>
+    <div id="deleteRow" style="display:none;margin-bottom:18px"><button class="copy-btn danger" id="deleteCustomBtn"><i class="bi bi-trash"></i> Eliminar personalizado</button></div>
+    <div class="section-title"><i class="bi bi-sliders"></i> Cómo se forma en RGB</div>
+    <div class="rgb-card">
+      <div class="rgb-row"><div class="rgb-row-head"><div class="rgb-label"><div class="dot" style="background:var(--red)"></div> Rojo</div><div id="rNum" class="rgb-val">255</div></div><div class="bar"><div id="rBar" class="bar-fill" style="background:var(--red)"></div></div></div>
+      <div class="rgb-row"><div class="rgb-row-head"><div class="rgb-label"><div class="dot" style="background:var(--green)"></div> Verde</div><div id="gNum" class="rgb-val">176</div></div><div class="bar"><div id="gBar" class="bar-fill" style="background:var(--green)"></div></div></div>
+      <div class="rgb-row"><div class="rgb-row-head"><div class="rgb-label"><div class="dot" style="background:var(--blue)"></div> Azul</div><div id="bNum" class="rgb-val">0</div></div><div class="bar"><div id="bBar" class="bar-fill" style="background:var(--blue)"></div></div></div>
+      <div id="explain" class="explain"></div>
+    </div>
+    <div class="section-title"><i class="bi bi-eye"></i> Simular daltonismo</div>
+    <div class="sim-controls">
+      <button class="sim-btn active" data-sim="normal">Normal</button>
+      <button class="sim-btn" data-sim="protanopia">Protanopía</button>
+      <button class="sim-btn" data-sim="deuteranopia">Deuteranopía</button>
+      <button class="sim-btn" data-sim="tritanopia">Tritanopía</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Panel -->
+<div class="settings-overlay" id="settingsOverlay"></div>
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-header">
+    <button class="close-btn" id="settingsCloseBtn"><i class="bi bi-arrow-left"></i></button>
+    <div class="settings-title"><i class="bi bi-gear-fill"></i> Configuración</div>
+    <div style="width:38px"></div>
+  </div>
+  <div class="settings-scroll">
+    <div class="settings-section">
+      <div class="settings-section-title"><i class="bi bi-palette"></i> Apariencia • Tema</div>
+      <div class="theme-options">
+        <button class="theme-option" data-theme="light">
+          <div class="icon"><i class="bi bi-sun-fill"></i></div>
+          <div class="label">Claro</div>
+        </button>
+        <button class="theme-option" data-theme="dark">
+          <div class="icon"><i class="bi bi-moon-stars-fill"></i></div>
+          <div class="label">Oscuro</div>
+        </button>
+        <button class="theme-option" data-theme="system">
+          <div class="icon"><i class="bi bi-display"></i></div>
+          <div class="label">Sistema</div>
+        </button>
+      </div>
+      <div style="font-size:11.5px;color:var(--muted);font-weight:500;line-height:1.4"><i class="bi bi-info-circle"></i> Oscuro es negro puro #000000 AMOLED. Sistema sigue tu Android.</div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-head">
+        <div class="settings-section-title"><i class="bi bi-star-fill"></i> Favoritos <span id="favCountSettings"></span></div>
+        <button id="clearFavsBtn" class="clear-btn"><i class="bi bi-trash"></i> Borrar</button>
+      </div>
+      <div id="favListSettings" class="settings-color-list"></div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-head">
+        <div class="settings-section-title"><i class="bi bi-plus-circle-fill"></i> Mis colores <span id="customCountSettings"></span></div>
+        <button id="clearCustomBtn" class="clear-btn"><i class="bi bi-trash"></i> Borrar</button>
+      </div>
+      <div id="customListSettings" class="settings-color-list"></div>
+    </div>
+
+    <div style="margin-top:8px;padding:20px 4px 8px;border-top:1px solid var(--border);text-align:center">
+      <div style="font-size:12px;font-weight:700;letter-spacing:-0.2px;color:var(--text);display:flex;align-items:center;justify-content:center;gap:6px"><i class="bi bi-code-slash"></i> Desarrollado por Mauricio Ricotti</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:500">Croma RGB • 2026 • Hecho con <i class="bi bi-heart-fill" style="color:#FF3B30"></i> en Argentina</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Camera Scanner -->
+<div class="camera-overlay" id="cameraOverlay">
+  <div class="camera-header">
+    <button class="close-btn" id="cameraCloseBtn" style="background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.2);color:white"><i class="bi bi-x-lg"></i></button>
+    <div class="camera-title"><i class="bi bi-camera-fill"></i> Escáner RGB</div>
+    <div style="width:38px"></div>
+  </div>
+  <div class="camera-viewport">
+    <video id="cameraVideo" autoplay playsinline muted></video>
+    <canvas id="cameraCanvas" width="100" height="100" style="display:none"></canvas>
+    <div class="camera-reticle"><div class="reticle-inner"></div></div>
+    <div style="position:absolute;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);color:white;padding:6px 12px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:0.5px;backdrop-filter:blur(8px)"><i class="bi bi-crosshair"></i> Apunta al centro</div>
+  </div>
+  <div class="camera-info">
+    <div class="camera-color-preview" id="cameraColorPreview"></div>
+    <div class="camera-color-meta">
+      <div class="camera-color-name" id="cameraColorName">Iniciando cámara...</div>
+      <div class="camera-color-hex" id="cameraColorHex">Apunta a un objeto</div>
+    </div>
+    <button id="cameraCaptureBtn" class="camera-capture-btn"><i class="bi bi-plus-lg"></i> Guardar</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"><i class="bi bi-check-lg"></i><span id="toastText">Listo</span></div>
+
+<script>
+const baseColors = [
+  {name:"Rojo puro", hex:"#FF0000", rgb:[255,0,0], cat:"basicos"},
+  {name:"Azul puro", hex:"#0000FF", rgb:[0,0,255], cat:"basicos"},
+  {name:"Verde puro", hex:"#00C950", rgb:[0,201,80], cat:"basicos"},
+  {name:"Amarillo", hex:"#FFD400", rgb:[255,212,0], cat:"basicos"},
+  {name:"Naranja", hex:"#FF6B00", rgb:[255,107,0], cat:"basicos"},
+  {name:"Ámbar", hex:"#FFB000", rgb:[255,176,0], cat:"intensos"},
+  {name:"Violeta", hex:"#7A00E6", rgb:[122,0,230], cat:"basicos"},
+  {name:"Rosa intenso", hex:"#FF2D7B", rgb:[255,45,123], cat:"basicos"},
+  {name:"Celeste", hex:"#3ABEFF", rgb:[58,190,255], cat:"basicos"},
+  {name:"Blanco", hex:"#FFFFFF", rgb:[255,255,255], cat:"neutros"},
+  {name:"Negro", hex:"#0F172A", rgb:[15,23,42], cat:"neutros"},
+  {name:"Gris claro", hex:"#E2E8F0", rgb:[226,232,240], cat:"neutros"},
+  {name:"Gris medio", hex:"#94A3B8", rgb:[148,163,184], cat:"neutros"},
+  {name:"Gris oscuro", hex:"#334155", rgb:[51,65,85], cat:"neutros"},
+  {name:"Beige", hex:"#F5E6C8", rgb:[245,230,200], cat:"neutros"},
+  {name:"Marrón", hex:"#8B4513", rgb:[139,69,19], cat:"tierra"},
+  {name:"Marrón claro", hex:"#C19A6B", rgb:[193,154,107], cat:"tierra"},
+  {name:"Verde oliva", hex:"#6B8E23", rgb:[107,142,35], cat:"tierra"},
+  {name:"Terracota", hex:"#E2725B", rgb:[226,114,91], cat:"tierra"},
+  {name:"Arena", hex:"#D2B48C", rgb:[210,180,140], cat:"tierra"},
+  {name:"Rojo oscuro", hex:"#B91C1C", rgb:[185,28,28], cat:"intensos"},
+  {name:"Azul marino", hex:"#1E3A8A", rgb:[30,58,138], cat:"intensos"},
+  {name:"Verde bosque", hex:"#14532D", rgb:[20,83,45], cat:"intensos"},
+  {name:"Amarillo mostaza", hex:"#CA8A04", rgb:[202,138,4], cat:"intensos"},
+  {name:"Bordó", hex:"#7F1D1D", rgb:[127,29,29], cat:"intensos"},
+  {name:"Petróleo", hex:"#0F766E", rgb:[15,118,110], cat:"intensos"},
+  {name:"Índigo", hex:"#4338CA", rgb:[67,56,202], cat:"intensos"},
+  {name:"Fucsia", hex:"#C026D3", rgb:[192,38,211], cat:"intensos"},
+  {name:"Lima", hex:"#84CC16", rgb:[132,204,22], cat:"intensos"},
+  {name:"Turquesa", hex:"#06B6D4", rgb:[6,182,212], cat:"pasteles"},
+  {name:"Lavanda", hex:"#C4B5FD", rgb:[196,181,253], cat:"pasteles"},
+  {name:"Rosa pastel", hex:"#F9A8D4", rgb:[249,168,212], cat:"pasteles"},
+  {name:"Celeste pastel", hex:"#BAE6FD", rgb:[186,230,253], cat:"pasteles"},
+  {name:"Verde menta", hex:"#A7F3D0", rgb:[167,243,208], cat:"pasteles"},
+  {name:"Durazno", hex:"#FDBA74", rgb:[253,186,116], cat:"pasteles"},
+  {name:"Amarillo pastel", hex:"#FEF08A", rgb:[254,240,138], cat:"pasteles"},
+  {name:"Lila", hex:"#DDD6FE", rgb:[221,214,254], cat:"pasteles"},
+  {name:"Coral", hex:"#FF7F50", rgb:[255,127,80], cat:"intensos"},
+  {name:"Salmón", hex:"#FFA07A", rgb:[255,160,122], cat:"pasteles"},
+  {name:"Cian", hex:"#00FFFF", rgb:[0,255,255], cat:"basicos"},
+  {name:"Magenta", hex:"#FF00FF", rgb:[255,0,255], cat:"basicos"},
+  {name:"Verde lima", hex:"#32CD32", rgb:[50,205,50], cat:"basicos"},
+  {name:"Azul acero", hex:"#4682B4", rgb:[70,130,180], cat:"neutros"},
+  {name:"Dorado", hex:"#FFD700", rgb:[255,215,0], cat:"intensos"},
+  {name:"Plateado", hex:"#C0C0C0", rgb:[192,192,192], cat:"neutros"},
+  {name:"Cobre", hex:"#B87333", rgb:[184,115,51], cat:"tierra"},
+  {name:"Esmeralda", hex:"#2ECC71", rgb:[46,204,113], cat:"intensos"},
+  {name:"Zafiro", hex:"#0F52BA", rgb:[15,82,186], cat:"intensos"},
+  {name:"Rubí", hex:"#9B111E", rgb:[155,17,30], cat:"intensos"},
+  {name:"Marfil", hex:"#FFFFF0", rgb:[255,255,240], cat:"neutros"},
+  {name:"Carbón", hex:"#36454F", rgb:[54,69,79], cat:"neutros"},
+  {name:"Nieve", hex:"#FFFAFA", rgb:[255,250,250], cat:"neutros"},
+  {name:"Chocolate", hex:"#5D4037", rgb:[93,64,55], cat:"tierra"},
+  {name:"Crema", hex:"#FFFDD0", rgb:[255,253,208], cat:"pasteles"},
+  {name:"Mandarina", hex:"#FF8C00", rgb:[255,140,0], cat:"basicos"},
+  {name:"Uva", hex:"#6F2DA8", rgb:[111,45,168], cat:"intensos"},
+  {name:"Musgo", hex:"#8A9A5B", rgb:[138,154,91], cat:"tierra"},
+  {name:"Cielo", hex:"#87CEEB", rgb:[135,206,235], cat:"pasteles"},
+  {name:"Medianoche", hex:"#191970", rgb:[25,25,112], cat:"intensos"},
+];
+
+let customColors = JSON.parse(localStorage.getItem('croma-custom-colors') || '[]');
+let favorites = new Set(JSON.parse(localStorage.getItem('croma-favorites') || '[]'));
+function getAllColors(){ return [...baseColors, ...customColors]; }
+
+const baseCategories = [
+  {id:"todos", label:"Todos"},
+  {id:"favoritos", label:"Favoritos", icon:"bi-star-fill"},
+  {id:"personalizados", label:"Mis colores", icon:"bi-plus-circle-fill"},
+  {id:"basicos", label:"Básicos"},
+  {id:"intensos", label:"Intensos"},
+  {id:"pasteles", label:"Pasteles"},
+  {id:"neutros", label:"Neutros"},
+  {id:"tierra", label:"Tierra"},
+];
+
+let activeCat="todos", activeColor=null, deferredPrompt=null;
+let isExpanded=false;
+const INITIAL_LIMIT=20;
+
+const listEl=document.getElementById('list');
+const filtersEl=document.getElementById('filters');
+const searchEl=document.getElementById('search');
+const countEl=document.getElementById('count');
+const showMoreWrap=document.getElementById('showMoreWrap');
+const overlay=document.getElementById('overlay');
+const sheet=document.getElementById('sheet');
+const closeBtn=document.getElementById('closeBtn');
+const detailFavBtn=document.getElementById('detailFavBtn');
+const offlineBar=document.getElementById('offlineBar');
+const deleteRow=document.getElementById('deleteRow');
+
+const detailSwatch=document.getElementById('detailSwatch');
+const detailName=document.getElementById('detailName');
+const detailHex=document.getElementById('detailHex');
+const rNum=document.getElementById('rNum'), gNum=document.getElementById('gNum'), bNum=document.getElementById('bNum');
+const rBar=document.getElementById('rBar'), gBar=document.getElementById('gBar'), bBar=document.getElementById('bBar');
+const explain=document.getElementById('explain');
+
+const settingsBtn=document.getElementById('settingsBtn');
+const settingsOverlay=document.getElementById('settingsOverlay');
+const settingsPanel=document.getElementById('settingsPanel');
+const settingsCloseBtn=document.getElementById('settingsCloseBtn');
+const favListSettings=document.getElementById('favListSettings');
+const customListSettings=document.getElementById('customListSettings');
+const favCountSettings=document.getElementById('favCountSettings');
+const customCountSettings=document.getElementById('customCountSettings');
+
+const themeColorMeta=document.getElementById('themeColorMeta');
+function getSystemTheme(){ return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+function getSavedTheme(){ return localStorage.getItem('croma-theme') || 'system'; }
+function resolveTheme(saved){ return saved==='system' ? getSystemTheme() : saved; }
+function applyTheme(saved){
+  const resolved=resolveTheme(saved);
+  document.documentElement.setAttribute('data-theme', resolved);
+  localStorage.setItem('croma-theme', saved);
+  themeColorMeta.setAttribute('content', resolved==='dark' ? '#000000' : '#FFFFFF');
+  document.querySelectorAll('.theme-option').forEach(opt=>{ opt.classList.toggle('active', opt.dataset.theme===saved); });
+}
+let currentSavedTheme=getSavedTheme();
+applyTheme(currentSavedTheme);
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{ if(getSavedTheme()==='system') applyTheme('system'); });
+document.querySelectorAll('.theme-option').forEach(btn=>{
+  btn.onclick=()=>{ applyTheme(btn.dataset.theme); showToast(btn.dataset.theme==='dark'?'Oscuro negro':btn.dataset.theme==='light'?'Claro':'Sistema'); };
+});
+
+function saveFavorites(){ localStorage.setItem('croma-favorites', JSON.stringify([...favorites])); }
+function saveCustom(){ localStorage.setItem('croma-custom-colors', JSON.stringify(customColors)); }
+
+function toggleFavorite(hex){
+  if(favorites.has(hex)){ favorites.delete(hex); showToast('Eliminado de favoritos'); }
+  else { favorites.add(hex); showToast('Favorito guardado'); }
+  saveFavorites(); renderFilters(); renderList(); renderSettingsLists(); updateDetailFavBtn();
+}
+function updateDetailFavBtn(){
+  if(!activeColor) return;
+  const isFav=favorites.has(activeColor.hex);
+  detailFavBtn.classList.toggle('fav-active', isFav);
+  detailFavBtn.innerHTML=isFav ? '<i class="bi bi-star-fill"></i>' : '<i class="bi bi-star"></i>';
+}
+
+function renderFilters(){
+  const favCount=favorites.size, customCount=customColors.length;
+  filtersEl.innerHTML=baseCategories.map(c=>{
+    if(c.id==='personalizados' && customCount===0) return '';
+    const count=c.id==='favoritos'?favCount:c.id==='personalizados'?customCount:'';
+    const icon = c.icon ? `<i class="bi ${c.icon}"></i>` : '';
+    return `<button class="chip ${activeCat===c.id?'active':''}" data-cat="${c.id}">${icon} ${c.label} ${count?`<span class="chip-count">${count}</span>`:''}</button>`;
+  }).join('');
+  filtersEl.querySelectorAll('.chip').forEach(btn=>{
+    btn.onclick=()=>{ activeCat=btn.dataset.cat; isExpanded=false; renderFilters(); renderList(); };
+  });
+}
+
+function filteredColors(){
+  const q=searchEl.value.trim().toLowerCase();
+  const all=getAllColors();
+  return all.filter(col=>{
+    const matchFav=activeCat!=='favoritos' || favorites.has(col.hex);
+    const matchCustom=activeCat!=='personalizados' || col.cat==='personalizados';
+    const matchCat=activeCat==='todos' || activeCat==='favoritos' || activeCat==='personalizados' || col.cat===activeCat;
+    const matchQ=!q || col.name.toLowerCase().includes(q) || col.hex.toLowerCase().includes(q) || col.rgb.join(',').includes(q);
+    return (activeCat==='favoritos'?matchFav:activeCat==='personalizados'?matchCustom:true) && matchCat && matchQ;
+  });
+}
+
+function renderList(){
+  const data=filteredColors();
+  const label=activeCat==='todos'?'todas':activeCat==='favoritos'?'favoritos':activeCat==='personalizados'?'personalizados':baseCategories.find(c=>c.id===activeCat)?.label.toLowerCase();
+  countEl.textContent=`${data.length} colores • ${label}`;
+  if(data.length===0){
+    listEl.innerHTML= activeCat==='favoritos' ? `<div class="empty"><i class="bi bi-star" style="font-size:32px"></i><br><b>Sin favoritos</b><br>Toca la estrella</div>`
+      : activeCat==='personalizados' ? `<div class="empty"><i class="bi bi-plus-circle" style="font-size:32px"></i><br><b>Sin personalizados</b><br>Crealos en Laboratorio</div>`
+      : `<div class="empty"><b>Sin resultados</b></div>`;
+    showMoreWrap.innerHTML=''; return;
+  }
+  const showAll=isExpanded || data.length<=INITIAL_LIMIT;
+  const visibleData=showAll ? data : data.slice(0, INITIAL_LIMIT);
+  const remaining=data.length-INITIAL_LIMIT;
+  listEl.innerHTML=visibleData.map((c,i)=>{
+    const isFav=favorites.has(c.hex), isCustom=c.cat==='personalizados';
+    const animClass=!isExpanded || i<INITIAL_LIMIT ? '' : 'animate-in';
+    const delay=!isExpanded || i<INITIAL_LIMIT ? '' : `style="animation-delay:${(i-INITIAL_LIMIT)*0.04}s"`;
+    return `<div class="color-item ${isCustom?'custom':''} ${animClass}" data-hex="${c.hex}" ${delay}>
+      <div class="swatch" style="background:${c.hex}"></div>
+      <div class="meta"><div class="meta-name">${c.name} ${isCustom?'<span style="font-size:10px;background:var(--text);color:var(--bg);padding:2px 6px;border-radius:999px">TUYO</span>':''}</div><div class="meta-hex">${c.hex} • RGB ${c.rgb.join(', ')}</div></div>
+      <button class="fav-btn ${isFav?'active':''}" data-fav="${c.hex}"><i class="bi ${isFav?'bi-star-fill':'bi-star'}"></i></button>
+      <div class="chevron"><i class="bi bi-chevron-right"></i></div>
+    </div>`;
+  }).join('');
+  if(data.length>INITIAL_LIMIT){
+    showMoreWrap.innerHTML=`<button id="toggleMoreBtn" class="show-more-btn ${isExpanded?'expanded':''}">
+      ${isExpanded ? `Ver menos` : `Ver más (${remaining})`} <i class="bi bi-chevron-down"></i>
+    </button>`;
+    document.getElementById('toggleMoreBtn').onclick=()=>{
+      isExpanded=!isExpanded; renderList();
+    };
+  } else { showMoreWrap.innerHTML=''; }
+  listEl.querySelectorAll('.color-item').forEach(el=>{
+    const col=getAllColors().find(x=>x.hex===el.dataset.hex);
+    el.onclick=(e)=>{ if(e.target.closest('.fav-btn')) return; openDetail(col); };
+  });
+  listEl.querySelectorAll('.fav-btn').forEach(btn=>{
+    btn.onclick=(e)=>{ e.stopPropagation(); toggleFavorite(btn.dataset.fav); };
+  });
+}
+
+function openDetail(col){
+  activeColor=col;
+  detailSwatch.style.background=col.hex; detailSwatch.style.filter='none';
+  detailName.textContent=col.name;
+  detailHex.textContent=`${col.hex} • RGB ${col.rgb.join(', ')}`;
+  const [r,g,b]=col.rgb;
+  rNum.textContent=r; gNum.textContent=g; bNum.textContent=b;
+  rBar.style.width=(r/255*100)+'%'; gBar.style.width=(g/255*100)+'%'; bBar.style.width=(b/255*100)+'%';
+  explain.innerHTML=`Se forma con <strong>${r} de Rojo, ${g} de Verde y ${b} de Azul</strong>.`;
+  updateDetailFavBtn();
+  deleteRow.style.display=col.cat==='personalizados'?'block':'none';
+  document.querySelectorAll('.sim-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelector('.sim-btn[data-sim="normal"]').classList.add('active');
+  overlay.classList.add('open'); sheet.classList.add('open'); document.body.style.overflow='hidden';
+}
+function closeDetail(){ overlay.classList.remove('open'); sheet.classList.remove('open'); document.body.style.overflow=''; }
+overlay.onclick=closeDetail; closeBtn.onclick=closeDetail;
+detailFavBtn.onclick=()=>{ if(activeColor) toggleFavorite(activeColor.hex); };
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  document.getElementById('toastText').textContent=msg;
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200);
+}
+document.getElementById('copyRgbBtn').onclick=()=>{
+  if(!activeColor) return;
+  navigator.clipboard.writeText(`rgb(${activeColor.rgb.join(', ')})`).then(()=>showToast('RGB copiado'));
+};
+document.getElementById('copyHexBtn').onclick=()=>{
+  if(!activeColor) return;
+  navigator.clipboard.writeText(activeColor.hex).then(()=>showToast('HEX copiado'));
+};
+document.getElementById('deleteCustomBtn').onclick=()=>{
+  if(!activeColor || activeColor.cat!=='personalizados') return;
+  if(confirm(`¿Eliminar "${activeColor.name}"?`)){
+    customColors=customColors.filter(c=>c.hex!==activeColor.hex);
+    saveCustom(); closeDetail(); renderFilters(); renderList(); renderSettingsLists(); showToast('Eliminado');
+  }
+};
+document.querySelectorAll('.sim-btn').forEach(btn=>{
+  btn.onclick=()=>{
+    document.querySelectorAll('.sim-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    detailSwatch.style.filter=btn.dataset.sim==='normal'?'none':`url(#${btn.dataset.sim})`;
+  }
+});
+
+// LAB
+const rRange=document.getElementById('rRange'), gRange=document.getElementById('gRange'), bRange=document.getElementById('bRange');
+const rVal=document.getElementById('rVal'), gVal=document.getElementById('gVal'), bVal=document.getElementById('bVal');
+const labPreview=document.getElementById('labPreview'), labHex=document.getElementById('labHex'), labRgb=document.getElementById('labRgb');
+const labNameText=document.getElementById('labNameText'), labDistanceText=document.getElementById('labDistanceText');
+const customNameInput=document.getElementById('customNameInput'), saveCustomBtn=document.getElementById('saveCustomBtn');
+
+function findClosest(r,g,b){
+  let best=null, bestDist=Infinity;
+  for(const c of baseColors){
+    const dr=r-c.rgb[0], dg=g-c.rgb[1], db=b-c.rgb[2];
+    const dist=Math.sqrt(dr*dr+dg*dg+db*db);
+    if(dist<bestDist){ bestDist=dist; best=c; }
+  }
+  return {color:best, dist:bestDist};
+}
+function updateLab(){
+  const r=+rRange.value, g=+gRange.value, b=+bRange.value;
+  rVal.textContent=r; gVal.textContent=g; bVal.textContent=b;
+  const hex='#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+  labPreview.style.background=`rgb(${r},${g},${b})`;
+  labHex.textContent=hex; labRgb.textContent=`RGB ${r}, ${g}, ${b}`;
+  const {color, dist}=findClosest(r,g,b);
+  if(dist<8){ labNameText.textContent=`${color.name} • ¡Exacto!`; labDistanceText.textContent=`Es ${color.name} (${color.hex})`; }
+  else if(dist<35){ labNameText.textContent=color.name; labDistanceText.textContent=`Muy cercano a ${color.name}`; }
+  else if(dist<80){ labNameText.textContent=`Se parece a ${color.name}`; labDistanceText.textContent=`Cercano a ${color.name}`; }
+  else { labNameText.textContent=`Personalizado`; labDistanceText.textContent=`Mezcla única • ${hex}`; }
+}
+[rRange,gRange,bRange].forEach(el=>el.addEventListener('input', updateLab));
+updateLab();
+
+saveCustomBtn.onclick=()=>{
+  const name=customNameInput.value.trim();
+  if(!name){ showToast('Escribí un nombre'); customNameInput.focus(); return; }
+  const r=+rRange.value, g=+gRange.value, b=+bRange.value;
+  const hex='#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+  const idx=customColors.findIndex(c=>c.hex===hex);
+  if(idx>=0){ customColors[idx].name=name; showToast(`Actualizado: ${name}`); }
+  else { customColors.push({name, hex, rgb:[r,g,b], cat:"personalizados", custom:true}); showToast(`Guardado: ${name}`); }
+  saveCustom(); customNameInput.value=''; renderFilters(); renderList(); renderSettingsLists();
+  activeCat="personalizados"; isExpanded=false; renderFilters(); renderList();
+};
+
+searchEl.addEventListener('input', ()=>{ isExpanded=false; renderList(); });
+
+// SETTINGS
+function openSettings(){ settingsOverlay.classList.add('open'); settingsPanel.classList.add('open'); document.body.style.overflow='hidden'; renderSettingsLists(); }
+function closeSettings(){ settingsOverlay.classList.remove('open'); settingsPanel.classList.remove('open'); document.body.style.overflow=''; }
+settingsBtn.onclick=openSettings;
+settingsCloseBtn.onclick=closeSettings;
+settingsOverlay.onclick=closeSettings;
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ closeDetail(); closeSettings(); closeCamera(); } });
+
+function renderSettingsLists(){
+  favCountSettings.textContent=favorites.size?`(${favorites.size})`:'';
+  customCountSettings.textContent=customColors.length?`(${customColors.length})`:'';
+  const all=getAllColors();
+  const favColors=all.filter(c=>favorites.has(c.hex));
+  if(favColors.length===0){
+    favListSettings.innerHTML=`<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:12px"><i class="bi bi-star" style="font-size:20px"></i><br>Sin favoritos</div>`;
+  } else {
+    favListSettings.innerHTML=favColors.map(c=>`
+      <div class="settings-color-item">
+        <div class="swatch" style="background:${c.hex}"></div>
+        <div class="meta"><div class="meta-name">${c.name}</div><div class="meta-hex">${c.hex}</div></div>
+        <button class="remove-btn" data-remove-fav="${c.hex}"><i class="bi bi-x-lg"></i></button>
+      </div>
+    `).join('');
+    favListSettings.querySelectorAll('[data-remove-fav]').forEach(btn=>{ btn.onclick=()=>toggleFavorite(btn.dataset.removeFav); });
+  }
+  if(customColors.length===0){
+    customListSettings.innerHTML=`<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px;border:1px dashed var(--border);border-radius:12px"><i class="bi bi-plus-circle" style="font-size:20px"></i><br>Sin personalizados</div>`;
+  } else {
+    customListSettings.innerHTML=customColors.map(c=>`
+      <div class="settings-color-item">
+        <div class="swatch" style="background:${c.hex}"></div>
+        <div class="meta"><div class="meta-name">${c.name}</div><div class="meta-hex">${c.hex} • RGB ${c.rgb.join(', ')}</div></div>
+        <button class="remove-btn" data-remove-custom="${c.hex}"><i class="bi bi-trash"></i></button>
+      </div>
+    `).join('');
+    customListSettings.querySelectorAll('[data-remove-custom]').forEach(btn=>{
+      btn.onclick=()=>{
+        if(confirm('¿Eliminar?')){
+          customColors=customColors.filter(x=>x.hex!==btn.dataset.removeCustom);
+          saveCustom(); renderFilters(); renderList(); renderSettingsLists(); showToast('Eliminado');
+        }
+      };
+    });
+  }
+}
+
+document.getElementById('clearFavsBtn').onclick=()=>{
+  if(favorites.size===0){ showToast('No hay favoritos'); return; }
+  if(confirm(`¿Borrar ${favorites.size} favoritos?`)){
+    favorites.clear(); saveFavorites(); renderFilters(); renderList(); renderSettingsLists(); showToast('Borrados');
+  }
+};
+document.getElementById('clearCustomBtn').onclick=()=>{
+  if(customColors.length===0){ showToast('No hay personalizados'); return; }
+  if(confirm(`¿Borrar ${customColors.length} personalizados?`)){
+    customColors=[]; saveCustom(); renderFilters(); renderList(); renderSettingsLists(); showToast('Borrados');
+  }
+};
+
+// CAMARA EN VIVO - ESCANER RGB
+const cameraCard = document.getElementById('cameraCard');
+const cameraOverlay = document.getElementById('cameraOverlay');
+const cameraCloseBtn = document.getElementById('cameraCloseBtn');
+const cameraVideo = document.getElementById('cameraVideo');
+const cameraCanvas = document.getElementById('cameraCanvas');
+const cameraColorPreview = document.getElementById('cameraColorPreview');
+const cameraColorName = document.getElementById('cameraColorName');
+const cameraColorHex = document.getElementById('cameraColorHex');
+const cameraCaptureBtn = document.getElementById('cameraCaptureBtn');
+
+let cameraStream = null;
+let cameraInterval = null;
+let lastCameraRGB = [255,176,0];
+
+function findClosestForCamera(r,g,b){
+  let best=null, bestDist=Infinity;
+  for(const c of baseColors){
+    const dr=r-c.rgb[0], dg=g-c.rgb[1], db=b-c.rgb[2];
+    const dist=Math.sqrt(dr*dr+dg*dg+db*db);
+    if(dist<bestDist){ bestDist=dist; best=c; }
+  }
+  return {color:best, dist:bestDist};
+}
+
+function sampleCameraColor(){
+  if(!cameraVideo.videoWidth) return;
+  const ctx = cameraCanvas.getContext('2d', {willReadFrequently:true});
+  const vw = cameraVideo.videoWidth, vh = cameraVideo.videoHeight;
+  // Dibujar frame reducido
+  ctx.drawImage(cameraVideo, 0, 0, 100, 100);
+  // Tomar promedio de area central 10x10 para estabilidad
+  const cx = 50, cy = 50, size = 10;
+  const data = ctx.getImageData(cx-size/2, cy-size/2, size, size).data;
+  let r=0,g=0,b=0,count=0;
+  for(let i=0;i<data.length;i+=4){
+    r+=data[i]; g+=data[i+1]; b+=data[i+2]; count++;
+  }
+  r=Math.round(r/count); g=Math.round(g/count); b=Math.round(b/count);
+  lastCameraRGB=[r,g,b];
+  const hex='#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+  const {color, dist} = findClosestForCamera(r,g,b);
+  cameraColorPreview.style.background=`rgb(${r},${g},${b})`;
+  if(dist<12){
+    cameraColorName.textContent=color.name;
+    cameraColorHex.textContent=`${hex} • RGB ${r}, ${g}, ${b} • ¡Exacto!`;
+  } else if(dist<40){
+    cameraColorName.textContent=color.name;
+    cameraColorHex.textContent=`${hex} • RGB ${r}, ${g}, ${b} • Muy cercano`;
+  } else {
+    cameraColorName.textContent=`Se parece a ${color.name}`;
+    cameraColorHex.textContent=`${hex} • RGB ${r}, ${g}, ${b}`;
+  }
+}
+
+async function openCamera(){
+  cameraOverlay.classList.add('open');
+  document.body.style.overflow='hidden';
+  cameraColorName.textContent='Iniciando cámara...';
+  cameraColorHex.textContent='Permite el acceso a la cámara';
+  try{
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:'environment', width:{ideal:1280}, height:{ideal:720}},
+      audio:false
+    });
+    cameraVideo.srcObject=cameraStream;
+    await cameraVideo.play();
+    // Empezar muestreo cada 120ms
+    cameraInterval=setInterval(sampleCameraColor, 120);
+    showToast('Cámara activa • Apunta al centro');
+  } catch(err){
+    console.error(err);
+    cameraColorName.textContent='No se pudo abrir la cámara';
+    cameraColorHex.textContent='Revisa permisos del navegador';
+    showToast('Error de cámara: '+err.message);
+  }
+}
+function closeCamera(){
+  cameraOverlay.classList.remove('open');
+  document.body.style.overflow='';
+  if(cameraInterval){ clearInterval(cameraInterval); cameraInterval=null; }
+  if(cameraStream){
+    cameraStream.getTracks().forEach(t=>t.stop());
+    cameraStream=null;
+  }
+  cameraVideo.srcObject=null;
+}
+
+cameraCard.onclick=openCamera;
+cameraCloseBtn.onclick=closeCamera;
+cameraOverlay.addEventListener('click', (e)=>{
+  if(e.target===cameraOverlay) closeCamera();
+});
+
+cameraCaptureBtn.onclick=()=>{
+  const [r,g,b]=lastCameraRGB;
+  const hex='#'+[r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('').toUpperCase();
+  const {color} = findClosestForCamera(r,g,b);
+  const autoName=`${color.name} escaneado`;
+  const finalName = prompt(`Guardar color escaneado:\n${hex} • RGB ${r},${g},${b}\n\nNombre:`, autoName);
+  if(finalName===null) return;
+  const name = finalName.trim() || autoName;
+  // Evitar duplicado exacto
+  if(customColors.some(c=>c.hex===hex)){
+    showToast('Ese color ya está guardado');
+    return;
+  }
+  customColors.push({name, hex, rgb:[r,g,b], cat:"personalizados", custom:true, source:"camera"});
+  saveCustom();
+  renderFilters(); renderList(); renderSettingsLists();
+  activeCat="personalizados"; isExpanded=false; renderFilters(); renderList();
+  showToast(`Guardado: ${name}`);
+  closeCamera();
+};
+
+function updateOffline(){ offlineBar.classList.toggle('show', !navigator.onLine); }
+window.addEventListener('online', ()=>{ updateOffline(); showToast('Conectado'); });
+window.addEventListener('offline', ()=>{ updateOffline(); showToast('Offline'); });
+updateOffline();
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredPrompt=e; document.getElementById('installBanner').classList.add('show'); });
+document.getElementById('installBtn').onclick=async()=>{
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const {outcome}=await deferredPrompt.userChoice;
+  if(outcome==='accepted') showToast('Instalada offline');
+  deferredPrompt=null; document.getElementById('installBanner').classList.remove('show');
+};
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('./sw.js'); }
+
+// SPLASH ANIMACION ENTRADA
+const splash = document.getElementById('splash');
+const app = document.getElementById('app');
+function hideSplash(){
+  splash.classList.add('hide');
+  app.classList.add('ready');
+  setTimeout(()=>{ splash.style.display='none'; }, 800);
+}
+// Mostrar splash 1.3s minimo para que se vea la animacion premium
+window.addEventListener('load', ()=>{
+  setTimeout(hideSplash, 1300);
+});
+// Fallback por si load no dispara
+setTimeout(()=>{
+  if(!splash.classList.contains('hide')) hideSplash();
+}, 2500);
+
+renderFilters(); renderList(); renderSettingsLists();
+</script>
+</body>
+</html>
